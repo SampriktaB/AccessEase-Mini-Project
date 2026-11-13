@@ -50,4 +50,38 @@ LANDMARK_COLUMNS = [
     "description",
 ]
 
+# Directory and File Paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_LOCATIONS_PATH = os.path.join(BASE_DIR, "locations.csv")
+DEFAULT_PLACES_PATH = os.path.join(BASE_DIR, "places.csv")
+DEFAULT_LANDMARKS_PATH = os.path.join(BASE_DIR, "landmarks.csv")
 
+
+def load_landmarks_dataset(csv_path=None):
+    """
+    Loads the 20 Reference Anchor Landmarks dataset.
+    
+    Landmarks are physical starting points (major chowks, flyovers, bridges, squares)
+    used for offline Haversine proximity calculations.
+    """
+    if csv_path is None:
+        csv_path = DEFAULT_LANDMARKS_PATH
+    elif not os.path.isabs(csv_path):
+        resolved_path = os.path.join(BASE_DIR, csv_path)
+        if os.path.exists(resolved_path):
+            csv_path = resolved_path
+
+    if not os.path.exists(csv_path):
+        return pd.DataFrame(columns=LANDMARK_COLUMNS)
+
+    df = pd.read_csv(csv_path)
+
+    # Standardize types
+    if "id" in df.columns:
+        df["id"] = pd.to_numeric(df["id"], errors="coerce").fillna(0).astype(int)
+    if "latitude" in df.columns:
+        df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    if "longitude" in df.columns:
+        df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+
+    return df
