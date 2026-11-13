@@ -59,3 +59,11 @@ CATEGORIES = [
     "Railway/Metro Stations",
     "Public Buildings",
 ]
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculates great-circle distance between two geographic coordinates in kilometers.
+    Requires no external map APIs or internet connection (100% offline).
+    """
+
