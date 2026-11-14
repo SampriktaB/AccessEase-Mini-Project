@@ -1,1 +1,1 @@
-# AccessEase-Mini-Project
+AccessEase : Accessibility Assistant
