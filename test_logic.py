@@ -76,4 +76,8 @@ class TestAccessEaseLogic(unittest.TestCase):
             },
         ])
 
-    
+    def test_calculate_place_match_zero_selected(self):
+        """When no requirements are selected, match score should default to 100%."""
+        result = calculate_place_match(self.sample_place, [])
+        self.assertEqual(result["match_percent"], 100)
+        self.assertEqual(result["total_selected"], 0)
