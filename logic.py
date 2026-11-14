@@ -84,3 +84,51 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return round(R * c, 2)
+
+
+def calculate_place_match(place_row, selected_feature_columns):
+    """
+    Core Algorithm: Computes match percentage against user requirements.
+    
+    Formula:
+        Match Percentage = round((Confirmed Available Count / Total Selected Requirements) * 100)
+    
+    Tri-State Rule:
+        - 'Available' -> Counts as matched (+1 numerator)
+        - 'Unavailable' -> Counts as unmet (0 numerator)
+        - 'Unknown' -> Unverified (0 numerator, NEVER treated as absent)
+    """
+    total_selected = len(selected_feature_columns)
+
+    if total_selected == 0:
+        return {
+            "match_percent": 100,
+            "available_count": 0,
+            "unavailable_count": 0,
+            "unknown_count": 0,
+            "total_selected": 0,
+        }
+
+    available_count = 0
+    unavailable_count = 0
+    unknown_count = 0
+
+    for col in selected_feature_columns:
+        val = str(place_row.get(col, "Unknown")).strip().capitalize()
+        if val == "Available":
+            available_count += 1
+        elif val == "Unavailable":
+            unavailable_count += 1
+        else:
+            unknown_count += 1
+
+    match_percent = int(round((available_count / total_selected) * 100))
+
+    return {
+        "match_percent": match_percent,
+        "available_count": available_count,
+        "unavailable_count": unavailable_count,
+        "unknown_count": unknown_count,
+        "total_selected": total_selected,
+    }
+
