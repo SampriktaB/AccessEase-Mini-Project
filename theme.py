@@ -72,3 +72,49 @@ DROPDOWN_BORDER     = "#C4B5FD"   # Pastel violet outline
 DROPDOWN_ARROW      = "#5B21B6"   # Deep purple chevron
 DROPDOWN_TEXT       = "#482490"   # Deep royal violet text
 DROPDOWN_POPUP_BG   = "#FAF8FF"   # Clean light lavender-white for dropdown list
+
+# Category Ribbon & Icon Colors
+CATEGORY_THEMES = {
+    "Hospitals": {
+        "icon": "🏥",
+        "label": "Hospitals",
+        "color": "#0284C7",
+        "bg": "#E0F2FE",
+        "border": "#BAE6FD",
+    },
+    "Colleges": {
+        "icon": "🎓",
+        "label": "Colleges",
+        "color": "#1E40AF",
+        "bg": "#DBEAFE",
+        "border": "#BFDBFE",
+    },
+    "Parks": {
+        "icon": "🌳",
+        "label": "Parks &\nGardens",
+        "color": "#15803D",
+        "bg": "#DCFCE7",
+        "border": "#BBF7D0",
+    },
+    "Malls": {
+        "icon": "🛍",
+        "label": "Retail &\nShopping",
+        "color": "#BE185D",
+        "bg": "#FCE7F3",
+        "border": "#FBCFE8",
+    },
+    "Railway/Metro Stations": {
+        "icon": "🚇",
+        "label": "Metro\nStations",
+        "color": "#9A3412",
+        "bg": "#FFEDD5",
+        "border": "#FDBA74",
+    },
+    "Public Buildings": {
+        "icon": "🏛",
+        "label": "Public\nPlaces",
+        "color": "#A16207",
+        "bg": "#FEF9C3",
+        "border": "#FDE047",
+    },
+}
