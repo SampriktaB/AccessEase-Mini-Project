@@ -36,4 +36,39 @@ SURFACE_CARD        = "#FFFFFF"   # Clean white card surface
 BORDER_CARD         = "#E5DCF8"   # Subtle card border
 BORDER_SUBTLE       = "#D8C9F3"   # General subtle border
 
+# Hero Banner
+HERO_BG             = "#D6CFFB"   # Soft lavender hero container
+HERO_TITLE_COLOR    = "#220D4A"   # Bold deep purple ("Find. Access. Belong.")
+HERO_SUB_COLOR      = "#4A3575"   # Muted purple subtitle ("More Access, Less Stress!")
 
+# Brand Accents & Interactive Elements
+PRIMARY_COLOR       = "#5E29A8"   # Rich Purple (Search button & Active category)
+PRIMARY_DARK        = "#482490"   # Deep Purple Header/Accent
+PRIMARY_LIGHT       = "#EDE7FB"   # Soft Lilac Chip Background
+PRIMARY_HOVER       = "#4F1E94"   # Hover state for buttons
+
+# Typography Colors
+TEXT_MAIN           = "#1E1038"   # Deep purple-black for venue names
+TEXT_MUTED          = "#5C4F73"   # Muted slate for address and contact
+TEXT_SECONDARY      = "#796A93"   # Secondary meta information
+
+# Facility Chips & Status Badges
+CHIP_BG             = "#EDE7FB"   # Soft lavender chip background
+CHIP_FG             = "#5B21B6"   # Deep purple chip text
+MATCH_HIGH_BG       = "#D1FAE5"   # Mint green pill for high matches
+MATCH_HIGH_FG       = "#065F46"   # Forest green text
+MATCH_MED_BG        = "#FEF3C7"   # Warm amber pill
+MATCH_MED_FG        = "#92400E"   # Deep amber text
+MATCH_LOW_BG        = "#FCE7F3"   # Soft rose pill
+MATCH_LOW_FG        = "#9D174D"   # Berry red text
+DISTANCE_BG         = "#EDE7FB"   # Soft purple for landmark distance pill
+DISTANCE_FG         = "#5B21B6"   # Deep purple distance text
+DISTANCE_BORDER     = "#D8CBF8"   # Distance pill border
+
+# Pastel Violet / Lavender Dropdown Theme
+DROPDOWN_BG         = "#EDE7FB"   # Soft pastel lilac / lavender
+DROPDOWN_BG_HOVER   = "#DDD6FE"   # Active / hover soft violet
+DROPDOWN_BORDER     = "#C4B5FD"   # Pastel violet outline
+DROPDOWN_ARROW      = "#5B21B6"   # Deep purple chevron
+DROPDOWN_TEXT       = "#482490"   # Deep royal violet text
+DROPDOWN_POPUP_BG   = "#FAF8FF"   # Clean light lavender-white for dropdown list
