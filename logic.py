@@ -132,3 +132,23 @@ def calculate_place_match(place_row, selected_feature_columns):
         "total_selected": total_selected,
     }
 
+
+def filter_places(
+    df,
+    category="All Categories",
+    search_query="",
+    selected_feature_labels=None,
+    saved_ids=None,
+    only_saved=False,
+    landmark_lat=None,
+    landmark_lon=None,
+    max_distance_km=None,
+    sort_by="match",
+):
+    """
+    Filters places by Category, Search Keyword, Saved status, and Proximity Radius,
+    calculates match percentage, straight-line distance (Haversine formula),
+    and sorts records accordingly.
+    """
+
+    
