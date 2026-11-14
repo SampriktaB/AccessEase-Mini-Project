@@ -134,3 +134,4 @@ def load_places_dataset(csv_path=None):
         df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
 
     return df
+
