@@ -347,4 +347,276 @@ class AccessEaseDesktopApp(tk.Tk):
             arrowcolor=[("pressed", "#3A1C78"), ("active", "#5E29A8")],
         )
 
-        
+        # -------------------------------------------------------------
+    # Main Layout (Sidebar + Scrollable Content Canvas)
+    # -------------------------------------------------------------
+    def _build_main_layout(self):
+        # 1. Left Navigation Sidebar (Increased width for spacious layout)
+        self.sidebar_frame = tk.Frame(self, bg=SIDEBAR_BG, width=SIDEBAR_WIDTH)
+        self.sidebar_frame.pack(side="left", fill="y")
+        self.sidebar_frame.pack_propagate(False)
+        self._build_sidebar(self.sidebar_frame)
+
+        # 2. Right Scrollable Canvas Area
+        scroll_outer = tk.Frame(self, bg=BACKGROUND_PAGE)
+        scroll_outer.pack(side="left", fill="both", expand=True)
+
+        self.main_canvas = tk.Canvas(scroll_outer, bg=BACKGROUND_PAGE, highlightthickness=0)
+        self.main_scrollbar = ttk.Scrollbar(scroll_outer, orient="vertical", style="Violet.Vertical.TScrollbar", command=self.main_canvas.yview)
+        self.main_content = tk.Frame(self.main_canvas, bg=BACKGROUND_PAGE)
+
+        self.main_content.bind(
+            "<Configure>",
+            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all")),
+        )
+        self.canvas_window = self.main_canvas.create_window((0, 0), window=self.main_content, anchor="nw")
+        self.main_canvas.bind(
+            "<Configure>",
+            lambda e: self.main_canvas.itemconfig(self.canvas_window, width=e.width),
+        )
+
+        self.main_canvas.configure(yscrollcommand=self.main_scrollbar.set)
+        self.main_canvas.pack(side="left", fill="both", expand=True)
+        self.main_scrollbar.pack(side="right", fill="y")
+
+        # Smooth mousewheel scrolling
+        self.main_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+        # Populate Sections
+        self._build_hero_section(self.main_content)
+        self._build_proximity_section(self.main_content)
+        self._build_browse_category_section(self.main_content)
+        self._build_places_section(self.main_content)
+
+    def _on_mousewheel(self, event):
+        if self.main_canvas.winfo_exists():
+            self.main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    # -------------------------------------------------------------
+    # 1. Sidebar Architecture & Rounded Navigation Helpers
+    # -------------------------------------------------------------
+    @staticmethod
+    def _round_image_corners(im: Image.Image, radius: int = 18, border_color=None, border_width: int = 1) -> Image.Image:
+        """
+        Applies smooth anti-aliased rounded corners to any PIL RGBA image.
+        Uses 2x supersampling to ensure completely smooth, anti-aliased curved borders.
+        """
+        im = im.convert("RGBA")
+        w, h = im.size
+
+        scale = 2
+        big_size = (w * scale, h * scale)
+        mask = Image.new("L", big_size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle(
+            [(0, 0), (big_size[0] - 1, big_size[1] - 1)],
+            radius=radius * scale,
+            fill=255,
+        )
+        mask = mask.resize((w, h), Image.Resampling.LANCZOS)
+
+        result = im.copy()
+
+        if border_color:
+            border_overlay = Image.new("RGBA", big_size, (0, 0, 0, 0))
+            b_draw = ImageDraw.Draw(border_overlay)
+            b_draw.rounded_rectangle(
+                [(1, 1), (big_size[0] - 2, big_size[1] - 2)],
+                radius=radius * scale,
+                outline=border_color,
+                width=border_width * scale,
+            )
+            border_overlay = border_overlay.resize((w, h), Image.Resampling.LANCZOS)
+            result = Image.alpha_composite(result, border_overlay)
+
+        # Apply rounded corner alpha mask ensuring completely transparent corners
+        orig_r, orig_g, orig_b, orig_a = result.split()
+        final_a = ImageChops.multiply(orig_a, mask)
+        result.putalpha(final_a)
+
+        return result
+
+    def _build_sidebar(self, parent):
+        # Top Logo & Tagline (Centered in top of panel, enlarged, with smooth rounded corners)
+        logo_path = os.path.join(ASSETS_DIR, "sidebar_logo_v2.png")
+        if os.path.exists(logo_path):
+            try:
+                im = Image.open(logo_path).convert("RGBA")
+                # Enlarged proportionally with comfortable bottom padding for tagline
+                im = im.resize((216, 181), Image.Resampling.LANCZOS)
+                # Apply smooth rounded corners to the logo box
+                im = self._round_image_corners(im, radius=18, border_color="#6432B8", border_width=1)
+                self.images_cache["sidebar_logo"] = ImageTk.PhotoImage(im)
+                lbl_logo = tk.Label(parent, image=self.images_cache["sidebar_logo"], bg=SIDEBAR_BG, bd=0, highlightthickness=0)
+                lbl_logo.pack(side="top", anchor="center", pady=(18, 8))
+            except Exception:
+                self._build_fallback_brand(parent)
+        else:
+            self._build_fallback_brand(parent)
+
+        # Nav Menu Container (Rounded capsule buttons shifted downwards with generous spacing)
+        self.nav_buttons = {}
+        nav_items = [
+            ("🏠 Home", "Home"),
+            ("📍 Nearby Places", "Nearby Places"),
+            ("🤍 Favorites", "Favorites"),
+            ("🕒 History", "History"),
+            ("⚙ Settings", "Settings"),
+        ]
+
+        menu_frame = tk.Frame(parent, bg=SIDEBAR_BG)
+        menu_frame.pack(fill="x", padx=14, pady=(16, 0))
+
+        for display_text, nav_key in nav_items:
+            is_active = (nav_key == "Home")
+            btn = RoundedNavButton(
+                menu_frame,
+                text=display_text,
+                command=lambda k=nav_key: self._on_nav_clicked(k),
+                is_active=is_active,
+                width=232,
+                height=44,
+                radius=16,
+            )
+            btn.pack(fill="x", pady=3)
+            self.nav_buttons[nav_key] = btn
+
+        # Spacer pushing bottom art down
+        tk.Frame(parent, bg=SIDEBAR_BG).pack(fill="both", expand=True)
+
+        # Bottom Cursive Script Quote: "Accessible today... Inclusive tomorrow ♡" (Centered text with balanced top & bottom margins)
+        quote_path = os.path.join(ASSETS_DIR, "sidebar_quote.png")
+        if os.path.exists(quote_path):
+            try:
+                im = Image.open(quote_path).convert("RGBA")
+                # Reduced height to 226x104 for balanced vertical centering above and below text
+                im = im.resize((226, 104), Image.Resampling.LANCZOS)
+                # Apply smooth rounded corners to the bottom quote box
+                im = self._round_image_corners(im, radius=16, border_color="#6432B8", border_width=1)
+                self.images_cache["sidebar_quote"] = ImageTk.PhotoImage(im)
+                lbl_quote = tk.Label(parent, image=self.images_cache["sidebar_quote"], bg=SIDEBAR_BG, bd=0, highlightthickness=0)
+                lbl_quote.pack(side="bottom", anchor="center", pady=(0, 18))
+            except Exception:
+                self._build_fallback_quote(parent)
+        else:
+            self._build_fallback_quote(parent)
+
+    def _build_fallback_brand(self, parent):
+        brand_canvas = tk.Canvas(parent, width=216, height=120, bg=SIDEBAR_BG, highlightthickness=0)
+        brand_canvas.pack(side="top", anchor="center", pady=(18, 12))
+        draw_rounded_rect(brand_canvas, 2, 2, 214, 118, radius=18, fill="#3A286B", outline="#6432B8", width=1)
+        brand_canvas.create_text(108, 36, text=f"{APP_ICON}", font=("Segoe UI Emoji", 26), fill="#FFFFFF")
+        brand_canvas.create_text(108, 74, text=APP_NAME, font=("Segoe UI", 16, "bold"), fill="#FFFFFF")
+        brand_canvas.create_text(108, 98, text=APP_TAGLINE, font=("Segoe UI", 8), fill="#C8B8EE")
+
+    def _build_fallback_quote(self, parent):
+        quote_canvas = tk.Canvas(parent, width=226, height=90, bg=SIDEBAR_BG, highlightthickness=0)
+        quote_canvas.pack(side="bottom", anchor="center", pady=(0, 18))
+        draw_rounded_rect(quote_canvas, 2, 2, 224, 88, radius=18, fill="#3A286B", outline="#6432B8", width=1)
+        quote_canvas.create_text(113, 34, text="Accessible today...", font=("Segoe Script", 11, "italic"), fill="#D8CBF8")
+        quote_canvas.create_text(113, 62, text="Inclusive tomorrow ♡", font=("Segoe Script", 11, "italic"), fill="#D8CBF8")
+
+    # -------------------------------------------------------------
+    # 2. Hero Banner with Integrated Search (Rounded Box)
+    # -------------------------------------------------------------
+    def _build_hero_section(self, parent):
+        self.hero_container = tk.Frame(parent, bg=BACKGROUND_PAGE, padx=20)
+        self.hero_container.pack(fill="x", pady=(16, 8))
+
+        self.hero_canvas = tk.Canvas(self.hero_container, bg=BACKGROUND_PAGE, highlightthickness=0, height=138)
+        self.hero_canvas.pack(fill="x", expand=True)
+
+        hero_card = tk.Frame(self.hero_canvas, bg=HERO_BG)
+        self.hero_win = self.hero_canvas.create_window(18, 10, window=hero_card, anchor="nw")
+
+        def _on_hero_resize(e):
+            w = e.width
+            self.hero_canvas.delete("hero_bg")
+            draw_rounded_rect(self.hero_canvas, 2, 2, w - 4, 134, radius=20, fill=HERO_BG, outline="#C9BDF5", width=1, tags="hero_bg")
+            self.hero_canvas.tag_lower("hero_bg")
+            self.hero_canvas.itemconfig(self.hero_win, width=w - 36)
+
+        self.hero_canvas.bind("<Configure>", _on_hero_resize)
+
+        # Left Column: Heading + Subtitle + Integrated Search Pill
+        left_box = tk.Frame(hero_card, bg=HERO_BG)
+        left_box.pack(side="left", fill="both", expand=True, anchor="w")
+
+        tk.Label(
+            left_box,
+            text="Find. Access. Belong.",
+            font=FONT_HERO_TITLE,
+            bg=HERO_BG,
+            fg=HERO_TITLE_COLOR,
+        ).pack(anchor="w")
+
+        tk.Label(
+            left_box,
+            text="More Access, Less Stress!",
+            font=FONT_HERO_SUB,
+            bg=HERO_BG,
+            fg=HERO_SUB_COLOR,
+        ).pack(anchor="w", pady=(3, 10))
+
+        # Integrated Wide Search Pill Box (Smooth rounded pill)
+        search_pill_canvas = tk.Canvas(left_box, width=460, height=38, bg=HERO_BG, highlightthickness=0)
+        search_pill_canvas.pack(anchor="w")
+        draw_rounded_rect(search_pill_canvas, 1, 1, 459, 37, radius=18, fill="#FFFFFF", outline="#C8BCF2", width=1)
+
+        search_pill = tk.Frame(search_pill_canvas, bg="#FFFFFF")
+        # Explicit width=436, height=30 so search_pill spans the full inner pill length
+        search_pill_canvas.create_window(12, 4, window=search_pill, anchor="nw", width=436, height=30)
+
+        # Purple Search Action Button (Packed on far right end of the bar)
+        btn_search = tk.Button(
+            search_pill,
+            text="  🔍  ",
+            command=self.refresh_venue_list,
+            font=("Segoe UI Emoji", 9, "bold"),
+            bg=PRIMARY_COLOR,
+            fg="#FFFFFF",
+            activebackground=PRIMARY_HOVER,
+            activeforeground="#FFFFFF",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=8,
+            pady=2,
+        )
+        btn_search.pack(side="right", padx=(2, 2))
+
+        # Clear Search (✕)
+        btn_clear = tk.Label(search_pill, text="✕", font=("Segoe UI", 9, "bold"), bg="#FFFFFF", fg="#A393BD", cursor="hand2")
+        btn_clear.pack(side="right", padx=(2, 6))
+        btn_clear.bind("<Button-1>", lambda e: self._clear_search())
+
+        self.entry_search = tk.Entry(
+            search_pill,
+            textvariable=self.search_var,
+            font=("Segoe UI", 10),
+            bg="#FFFFFF",
+            fg=TEXT_MAIN,
+            relief="flat",
+            bd=0,
+        )
+        self.entry_search.pack(side="left", fill="x", expand=True, padx=(4, 6))
+        self.entry_search.bind("<KeyRelease>", lambda e: self.refresh_venue_list())
+
+        # Right Column: Skyline & Wheelchair Outline Artwork
+        art_path = os.path.join(ASSETS_DIR, "hero_art_v2.png")
+        if os.path.exists(art_path):
+            try:
+                im = Image.open(art_path).convert("RGBA")
+                orig_w, orig_h = im.size
+                target_h = 118
+                target_w = int((orig_w / orig_h) * target_h)
+                im = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                self.images_cache["hero_art_v2"] = ImageTk.PhotoImage(im)
+                lbl_art = tk.Label(hero_card, image=self.images_cache["hero_art_v2"], bg=HERO_BG)
+                lbl_art.pack(side="right", padx=(14, 0))
+            except Exception:
+                pass
+
+    def _clear_search(self):
+        self.search_var.set("")
+        self.refresh_venue_list()
