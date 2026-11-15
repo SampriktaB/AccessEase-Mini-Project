@@ -81,3 +81,19 @@ class TestAccessEaseLogic(unittest.TestCase):
         result = calculate_place_match(self.sample_place, [])
         self.assertEqual(result["match_percent"], 100)
         self.assertEqual(result["total_selected"], 0)
+
+    def test_calculate_place_match_mixed(self):
+        """
+        Selected 4 features:
+        - wheelchair_ramps: Available (1)
+        - lifts: Unavailable (1)
+        - accessible_toilets: Unknown (1)
+        - accessible_parking: Available (1)
+        Available = 2, Total = 4 -> Match = 50%
+        """
+        selected_cols = [
+            "wheelchair_ramps",
+            "lifts",
+            "accessible_toilets",
+            "accessible_parking",
+        ]
