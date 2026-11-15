@@ -95,3 +95,94 @@ def render_venue_card(parent_frame, place, selected_features, is_saved, on_toggl
         card_canvas.itemconfig(card_win, width=w - 24)
 
     card_canvas.bind("<Configure>", _on_card_configure)
+
+    # -------------------------------------------------------------
+    # 1. Left: Dedicated Category Icon Badge (Pure icon, Rounded & 100% Centered!)
+    # -------------------------------------------------------------
+    icon_canvas = tk.Canvas(
+        card,
+        width=58,
+        height=58,
+        bg=SURFACE_CARD,
+        highlightthickness=0,
+    )
+    icon_canvas.pack(side="left", padx=(0, 14))
+    draw_rounded_rect(
+        icon_canvas,
+        2, 2, 56, 56,
+        radius=14,
+        fill=cat_theme["bg"],
+        outline=cat_theme["border"],
+        width=1,
+    )
+    icon_canvas.create_text(29, 29, text=cat_theme["icon"], font=("Segoe UI Emoji", 24))
+
+    # -------------------------------------------------------------
+    # 2. Center: Name, Address, Contact, and Facility Chips
+    # -------------------------------------------------------------
+    center_frame = tk.Frame(card, bg=SURFACE_CARD)
+    center_frame.pack(side="left", fill="both", expand=True)
+
+    # Line 1: Venue Name
+    title_row = tk.Frame(center_frame, bg=SURFACE_CARD)
+    title_row.pack(anchor="w", fill="x")
+
+    tk.Label(
+        title_row,
+        text=place["name"],
+        font=FONT_CARD_TITLE,
+        bg=SURFACE_CARD,
+        fg=TEXT_MAIN,
+    ).pack(side="left")
+
+    # Line 2: Address & Contact
+    info_row = tk.Frame(center_frame, bg=SURFACE_CARD)
+    info_row.pack(anchor="w", fill="x", pady=(2, 5))
+
+    region_str = f", {place['region']}" if place.get("region") and str(place.get("region")).strip() else ""
+    addr_text = f"📍 {place['address']}{region_str}, {place['city']}"
+    contact_text = f"📞 {place['contact']}"
+
+    tk.Label(
+        info_row,
+        text=f"{addr_text}    {contact_text}",
+        font=FONT_CARD_INFO,
+        bg=SURFACE_CARD,
+        fg=TEXT_MUTED,
+    ).pack(side="left")
+
+    # Line 3: Soft Lavender Facility Chips
+    chips_row = tk.Frame(center_frame, bg=SURFACE_CARD)
+    chips_row.pack(anchor="w", fill="x", pady=(2, 0))
+
+    # Collect available facilities
+    available_chips = []
+    for col_key, chip_name in FACILITY_SHORT_NAMES.items():
+        if str(place.get(col_key, "")).strip().capitalize() == "Available":
+            available_chips.append(chip_name)
+
+    # Show up to 5 chips
+    for chip_text in available_chips[:5]:
+        c_lbl = tk.Label(
+            chips_row,
+            text=chip_text,
+            font=FONT_CHIP,
+            bg=CHIP_BG,
+            fg=CHIP_FG,
+            padx=8,
+            pady=2,
+            relief="flat",
+        )
+        c_lbl.pack(side="left", padx=(0, 6))
+
+    if not available_chips:
+        c_lbl = tk.Label(
+            chips_row,
+            text="Accessibility verification in progress",
+            font=FONT_CHIP,
+            bg="#F3F0F9",
+            fg="#7E7295",
+            padx=8,
+            pady=2,
+        )
+        c_lbl.pack(side="left")
