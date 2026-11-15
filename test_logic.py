@@ -96,4 +96,10 @@ class TestAccessEaseLogic(unittest.TestCase):
             "lifts",
             "accessible_toilets",
             "accessible_parking",
-        ]
+
+        result = calculate_place_match(self.sample_place, selected_cols)
+        self.assertEqual(result["total_selected"], 4)
+        self.assertEqual(result["available_count"], 2)
+        self.assertEqual(result["unavailable_count"], 1)
+        self.assertEqual(result["unknown_count"], 1)
+        self.assertEqual(result["match_percent"], 50)
