@@ -118,3 +118,39 @@ CATEGORY_THEMES = {
         "border": "#FDE047",
     },
 }
+
+# -----------------------------------------------------------------------------
+# Typography (Clear & Readable)
+# -----------------------------------------------------------------------------
+FONT_FAMILY         = "Segoe UI"
+FONT_HERO_TITLE     = (FONT_FAMILY, 21, "bold")
+FONT_HERO_SUB       = (FONT_FAMILY, 10)
+FONT_NAV_ITEM       = (FONT_FAMILY, 12, "bold")
+FONT_SECTION_TITLE  = (FONT_FAMILY, 12, "bold")
+FONT_CARD_TITLE     = (FONT_FAMILY, 11, "bold")
+FONT_CARD_INFO      = (FONT_FAMILY, 9)
+FONT_CHIP           = (FONT_FAMILY, 8, "bold")
+FONT_MATCH_BADGE    = (FONT_FAMILY, 9, "bold")
+FONT_BUTTON         = (FONT_FAMILY, 9, "bold")
+
+
+def draw_rounded_rect(canvas, x1, y1, x2, y2, radius=14, **kwargs):
+    """
+    Draws a smooth polygon with rounded corners on a Tkinter Canvas.
+    Works natively across all Windows and cross-platform Tkinter environments.
+    """
+    points = [
+        x1 + radius, y1,
+        x2 - radius, y1,
+        x2, y1,
+        x2, y1 + radius,
+        x2, y2 - radius,
+        x2, y2,
+        x2 - radius, y2,
+        x1 + radius, y2,
+        x1, y2,
+        x1, y2 - radius,
+        x1, y1 + radius,
+        x1, y1,
+    ]
+    return canvas.create_polygon(points, smooth=True, **kwargs)
