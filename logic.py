@@ -150,5 +150,14 @@ def filter_places(
     calculates match percentage, straight-line distance (Haversine formula),
     and sorts records accordingly.
     """
+    if df.empty:
+        return df
+
+    filtered_df = df.copy()
+
+    # 1. Filter by Saved Bookmarks
+    if only_saved:
+        saved_set = set(saved_ids or [])
+        filtered_df = filtered_df[filtered_df["id"].isin(saved_set)]
 
     
