@@ -198,4 +198,22 @@ def filter_places(
         filtered_df["unknown_count"] = match_results["unknown_count"]
         filtered_df["total_selected"] = match_results["total_selected"]
 
-    
+        # 6. Proximity & Distance Calculation (Anchor-Based Landmark System)
+        has_coords = (landmark_lat is not None) and (landmark_lon is not None)
+        if has_coords:
+            filtered_df["distance_km"] = filtered_df.apply(
+                lambda row: haversine_distance(
+                    landmark_lat,
+                    landmark_lon,
+                    row.get("latitude"),
+                    row.get("longitude"),
+                ),
+                axis=1,
+            )
+
+            # Apply distance radius filter if specified
+            if max_distance_km is not None and max_distance_km > 0:
+                filtered_df = filtered_df[
+                    filtered_df["distance_km"].notna()
+                    & (filtered_df["distance_km"] <= float(max_distance_km))
+                ]
