@@ -163,4 +163,18 @@ def filter_places(
     # 2. Filter by Category
     if category and category != "All Categories":
         filtered_df = filtered_df[filtered_df["category"] == category]
+
+    # 3. Filter by Keyword (Name, City, Address, Region, or Auditor Notes)
+    if search_query:
+        query = search_query.strip().lower()
+        search_match = (
+            filtered_df["name"].str.lower().str.contains(query, na=False)
+            | filtered_df["city"].str.lower().str.contains(query, na=False)
+            | filtered_df["address"].str.lower().str.contains(query, na=False)
+            | filtered_df["notes"].str.lower().str.contains(query, na=False)
+        )
+        if "region" in filtered_df.columns:
+            search_match = search_match | filtered_df["region"].str.lower().str.contains(query, na=False)
+        filtered_df = filtered_df[search_match]
+
     
