@@ -620,3 +620,285 @@ class AccessEaseDesktopApp(tk.Tk):
     def _clear_search(self):
         self.search_var.set("")
         self.refresh_venue_list()
+
+        # -------------------------------------------------------------
+    # 2b. Anchor Landmark Proximity Navigation Bar (Rounded Box + Pastel Blue)
+    # -------------------------------------------------------------
+    def _build_proximity_section(self, parent):
+        self.proximity_container = tk.Frame(parent, bg=BACKGROUND_PAGE, padx=20)
+        self.proximity_container.pack(fill="x", pady=(2, 6))
+
+        self.prox_canvas = tk.Canvas(self.proximity_container, bg=BACKGROUND_PAGE, highlightthickness=0, height=52)
+        self.prox_canvas.pack(fill="x", expand=True)
+
+        bar = tk.Frame(self.prox_canvas, bg=SURFACE_CARD)
+        self.prox_win = self.prox_canvas.create_window(16, 26, window=bar, anchor="w")
+
+        def _on_prox_resize(e):
+            w = e.width
+            h = e.height
+            self.prox_canvas.delete("prox_bg")
+            draw_rounded_rect(self.prox_canvas, 2, 2, w - 4, h - 2, radius=16, fill=SURFACE_CARD, outline=BORDER_CARD, width=1, tags="prox_bg")
+            self.prox_canvas.tag_lower("prox_bg")
+            self.prox_canvas.coords(self.prox_win, 16, h // 2)
+            self.prox_canvas.itemconfig(self.prox_win, width=w - 32)
+
+        self.prox_canvas.bind("<Configure>", _on_prox_resize)
+
+        # 1. Landmark Selector
+        lm_box = tk.Frame(bar, bg=SURFACE_CARD)
+        lm_box.pack(side="left", padx=(0, 14))
+
+        tk.Label(
+            lm_box,
+            text="📍 Nearest Landmark:",
+            font=("Segoe UI", 9, "bold"),
+            bg=SURFACE_CARD,
+            fg=PRIMARY_DARK,
+        ).pack(side="left", padx=(0, 6))
+
+        self.landmark_options = ["None (All Pune Venues)"]
+        if not self.df_landmarks.empty:
+            for _, row in self.df_landmarks.iterrows():
+                area = f" ({row['landmark_area']})" if str(row.get("landmark_area", "")).strip() else ""
+                desc = f" — {row['description']}" if str(row.get("description", "")).strip() else ""
+                self.landmark_options.append(f"{row['name']}{area}{desc}")
+
+        self.landmark_var = tk.StringVar(value=self.landmark_options[0])
+
+        self.combo_landmark = ttk.Combobox(
+            lm_box,
+            textvariable=self.landmark_var,
+            values=self.landmark_options,
+            state="readonly",
+            style="Pastel.TCombobox",
+            width=36,
+            font=("Segoe UI", 9),
+        )
+        self.combo_landmark.pack(side="left")
+        self.combo_landmark.bind("<<ComboboxSelected>>", lambda e: self._on_proximity_changed())
+
+        # Enable horizontal side-scroll in landmark dropdown
+        enable_combobox_horizontal_scroll(self.combo_landmark)
+
+        # 2. Radius Filter
+        rad_box = tk.Frame(bar, bg=SURFACE_CARD)
+        rad_box.pack(side="left", padx=(0, 14))
+
+        tk.Label(
+            rad_box,
+            text="📏 Radius:",
+            font=("Segoe UI", 9, "bold"),
+            bg=SURFACE_CARD,
+            fg=PRIMARY_DARK,
+        ).pack(side="left", padx=(0, 6))
+
+        self.radius_options = ["Any Distance", "Within 2 km", "Within 5 km", "Within 10 km"]
+        self.radius_var = tk.StringVar(value=self.radius_options[0])
+
+        self.combo_radius = ttk.Combobox(
+            rad_box,
+            textvariable=self.radius_var,
+            values=self.radius_options,
+            state="readonly",
+            style="Pastel.TCombobox",
+            width=13,
+            font=("Segoe UI", 9),
+        )
+        self.combo_radius.pack(side="left")
+        self.combo_radius.bind("<<ComboboxSelected>>", lambda e: self._on_proximity_changed())
+
+        # 3. Sort Preference
+        sort_box = tk.Frame(bar, bg=SURFACE_CARD)
+        sort_box.pack(side="left", padx=(0, 10))
+
+        tk.Label(
+            sort_box,
+            text="🔀 Sort:",
+            font=("Segoe UI", 9, "bold"),
+            bg=SURFACE_CARD,
+            fg=PRIMARY_DARK,
+        ).pack(side="left", padx=(0, 6))
+
+        self.sort_options = ["Highest Match %", "Nearest Distance"]
+        self.sort_var = tk.StringVar(value=self.sort_options[0])
+
+        self.combo_sort = ttk.Combobox(
+            sort_box,
+            textvariable=self.sort_var,
+            values=self.sort_options,
+            state="readonly",
+            style="Pastel.TCombobox",
+            width=17,
+            font=("Segoe UI", 9),
+        )
+        self.combo_sort.pack(side="left")
+        self.combo_sort.bind("<<ComboboxSelected>>", lambda e: self._on_proximity_changed())
+
+        # Reset Proximity Button
+        btn_reset_prox = tk.Button(
+            bar,
+            text="Reset Proximity",
+            command=self._reset_proximity,
+            font=("Segoe UI", 8, "bold"),
+            bg=DROPDOWN_BG,
+            fg=DROPDOWN_TEXT,
+            activebackground=DROPDOWN_BG_HOVER,
+            relief="flat",
+            bd=0,
+            padx=10,
+            pady=3,
+            cursor="hand2",
+        )
+        btn_reset_prox.pack(side="right")
+
+    def _on_proximity_changed(self):
+        sel_idx = self.combo_landmark.current()
+        if sel_idx > 0 and not self.df_landmarks.empty:
+            row = self.df_landmarks.iloc[sel_idx - 1]
+            self.selected_landmark = {
+                "id": int(row["id"]),
+                "name": str(row["name"]),
+                "area": str(row["landmark_area"]),
+                "latitude": float(row["latitude"]),
+                "longitude": float(row["longitude"]),
+            }
+        else:
+            self.selected_landmark = None
+
+        rad_idx = self.combo_radius.current()
+        radius_map = {0: None, 1: 2.0, 2: 5.0, 3: 10.0}
+        self.selected_radius_km = radius_map.get(rad_idx, None)
+
+        sort_idx = self.combo_sort.current()
+        self.sort_mode = "distance" if sort_idx == 1 else "match"
+
+        self.refresh_venue_list()
+
+    def _reset_proximity(self):
+        self.landmark_var.set(self.landmark_options[0])
+        self.radius_var.set(self.radius_options[0])
+        self.sort_var.set(self.sort_options[0])
+        self.selected_landmark = None
+        self.selected_radius_km = None
+        self.sort_mode = "match"
+        self.refresh_venue_list()
+
+    # -------------------------------------------------------------
+    # 3. "Browse by Category" Section
+    # -------------------------------------------------------------
+    def _build_browse_category_section(self, parent):
+        self.cat_section = tk.Frame(parent, bg=BACKGROUND_PAGE, padx=20)
+        self.cat_section.pack(fill="x", pady=(6, 10))
+
+        # Header Row: "Browse by Category" + "View All →" + "⚙ Filters"
+        header_row = tk.Frame(self.cat_section, bg=BACKGROUND_PAGE)
+        header_row.pack(fill="x", pady=(0, 10))
+
+        tk.Label(
+            header_row,
+            text="Browse by Category",
+            font=FONT_SECTION_TITLE,
+            bg=BACKGROUND_PAGE,
+            fg=TEXT_MAIN,
+        ).pack(side="left")
+
+        actions_box = tk.Frame(header_row, bg=BACKGROUND_PAGE)
+        actions_box.pack(side="right")
+
+        # "View All →" Link
+        btn_view_all = tk.Label(
+            actions_box,
+            text="View All →",
+            font=("Segoe UI", 10, "bold"),
+            bg=BACKGROUND_PAGE,
+            fg=PRIMARY_COLOR,
+            cursor="hand2",
+        )
+        btn_view_all.pack(side="left", padx=(0, 14))
+        btn_view_all.bind("<Button-1>", lambda e: self._on_category_card_clicked("All Categories"))
+
+        # "⚙ Filters" Button
+        btn_filter = tk.Button(
+            actions_box,
+            text="⚙ Filters",
+            font=("Segoe UI", 9, "bold"),
+            bg="#FFFFFF",
+            fg=PRIMARY_COLOR,
+            activebackground="#EDE7FB",
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=4,
+            cursor="hand2",
+            command=self._open_filters_modal,
+        )
+        btn_filter.pack(side="left")
+
+        # Category Cards Row (Rounded Cards)
+        cards_row = tk.Frame(self.cat_section, bg=BACKGROUND_PAGE)
+        cards_row.pack(fill="x")
+
+        self.category_card_widgets = {}
+
+        for icon_char, label_text, cat_key in CATEGORY_CARDS_DATA:
+            cat_theme = CATEGORY_THEMES.get(cat_key, CATEGORY_THEMES["Public Buildings"])
+            is_active = (cat_key == self.current_category)
+
+            # Smooth rounded canvas card for each category box
+            card_canvas = tk.Canvas(
+                cards_row,
+                width=134,
+                height=104,
+                bg=BACKGROUND_PAGE,
+                highlightthickness=0,
+                cursor="hand2",
+            )
+            card_canvas.pack(side="left", padx=(0, 10))
+
+            outline_c = cat_theme["color"] if is_active else cat_theme["border"]
+            outline_w = 3 if is_active else 1
+
+            rect_id = draw_rounded_rect(
+                card_canvas,
+                2, 2, 132, 102,
+                radius=16,
+                fill=cat_theme["bg"],
+                outline=outline_c,
+                width=outline_w,
+            )
+
+            ic_id = card_canvas.create_text(
+                67, 36,
+                text=icon_char,
+                font=("Segoe UI Emoji", 21),
+                fill=cat_theme["color"],
+            )
+
+            lb_id = card_canvas.create_text(
+                67, 74,
+                text=label_text,
+                font=("Segoe UI", 9, "bold"),
+                fill=cat_theme["color"],
+                justify="center",
+            )
+
+            for w_id in (rect_id, ic_id, lb_id):
+                card_canvas.tag_bind(w_id, "<Button-1>", lambda e, ck=cat_key: self._on_category_card_clicked(ck))
+            card_canvas.bind("<Button-1>", lambda e, ck=cat_key: self._on_category_card_clicked(ck))
+
+            self.category_card_widgets[cat_key] = (card_canvas, rect_id, ic_id, lb_id, cat_theme)
+
+    def _on_category_card_clicked(self, category_key):
+        self.current_category = category_key
+
+        # Update visual highlight on cards matching category colors
+        for ck, (canvas, rect_id, ic_id, lb_id, theme) in self.category_card_widgets.items():
+            active = (ck == category_key)
+            canvas.itemconfig(
+                rect_id,
+                outline=theme["color"] if active else theme["border"],
+                width=3 if active else 1,
+            )
+
+        self.refresh_venue_list()
