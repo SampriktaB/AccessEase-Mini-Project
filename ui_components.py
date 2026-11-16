@@ -176,7 +176,7 @@ def render_venue_card(parent_frame, place, selected_features, is_saved, on_toggl
         c_lbl.pack(side="left", padx=(0, 6))
 
     if not available_chips:
-        c_lbl = tk.Label(
+         c_lbl = tk.Label(
             chips_row,
             text="Accessibility verification in progress",
             font=FONT_CHIP,
@@ -185,4 +185,87 @@ def render_venue_card(parent_frame, place, selected_features, is_saved, on_toggl
             padx=8,
             pady=2,
         )
-        c_lbl.pack(side="left")
+        c_lbl.pack(side="left") 
+
+    # -------------------------------------------------------------
+    # 3. Right: Distance Pill, Match Pill & Action Buttons
+    # -------------------------------------------------------------
+    right_frame = tk.Frame(card, bg=SURFACE_CARD)
+    right_frame.pack(side="right", padx=(10, 0))
+
+    # Proximity Distance Pill (Anchor-Based Landmark System)
+    dist_val = place.get("distance_km")
+    if dist_val is not None:
+        try:
+            d_float = float(dist_val)
+            dist_canvas = tk.Canvas(right_frame, width=96, height=28, bg=SURFACE_CARD, highlightthickness=0)
+            draw_rounded_rect(dist_canvas, 1, 1, 95, 27, radius=12, fill=DISTANCE_BG, outline=DISTANCE_BORDER, width=1)
+            dist_canvas.create_text(48, 14, text=f"📍 {d_float:.2f} km", font=FONT_MATCH_BADGE, fill=DISTANCE_FG)
+            dist_canvas.pack(side="left", padx=(0, 8))
+        except (ValueError, TypeError):
+            pass
+
+    # Match Pill
+    if match_pct >= 80:
+        match_bg, match_fg = MATCH_HIGH_BG, MATCH_HIGH_FG
+        icon_str = "✔"
+    elif match_pct >= 50:
+        match_bg, match_fg = MATCH_MED_BG, MATCH_MED_FG
+        icon_str = "✨"
+    else:
+        match_bg, match_fg = MATCH_LOW_BG, MATCH_LOW_FG
+        icon_str = "💡"
+
+    match_border = MATCH_HIGH_FG if match_pct >= 80 else (MATCH_MED_FG if match_pct >= 50 else MATCH_LOW_FG)
+    match_canvas = tk.Canvas(right_frame, width=108, height=28, bg=SURFACE_CARD, highlightthickness=0)
+    draw_rounded_rect(match_canvas, 1, 1, 107, 27, radius=12, fill=match_bg, outline=match_border, width=1)
+    match_canvas.create_text(54, 14, text=f"{icon_str} {match_pct}% Match", font=FONT_MATCH_BADGE, fill=match_fg)
+    match_canvas.pack(side="left", padx=(0, 10))
+
+    # Heart Bookmark Button
+    bm_icon = "💖" if is_saved else "🤍"
+    bm_bg = "#FCE7F3" if is_saved else "#F5F1FB"
+    bm_fg = "#BE185D" if is_saved else "#6D28D9"
+
+    btn_bm = tk.Button(
+        right_frame,
+        text=bm_icon,
+        command=lambda: on_toggle_bookmark(place_id),
+        font=("Segoe UI Emoji", 10),
+        bg=bm_bg,
+        fg=bm_fg,
+        activebackground="#FCE7F3",
+        relief="flat",
+        bd=0,
+        width=3,
+        cursor="hand2",
+    )
+    btn_bm.pack(side="left", padx=(0, 6))
+
+    # Arrow Details Button
+    btn_details = tk.Button(
+        right_frame,
+        text="❯",
+        command=lambda: on_open_details(place),
+        font=("Segoe UI", 10, "bold"),
+        bg="#F5F1FB",
+        fg=PRIMARY_COLOR,
+        activebackground=PRIMARY_LIGHT,
+        relief="flat",
+        bd=0,
+        width=3,
+        cursor="hand2",
+    )
+    btn_details.pack(side="left")
+
+
+def show_audit_details_dialog(parent_window, place, active_features):
+    """
+    Opens a modern, accessible modal dialog displaying the full 8-facility audit.
+    """
+    dialog = tk.Toplevel(parent_window)
+    dialog.title(f"Facility Audit - {place['name']}")
+    dialog.geometry("640x580")
+    dialog.configure(bg=BACKGROUND_PAGE)
+    dialog.transient(parent_window)
+    dialog.grab_set()
