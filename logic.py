@@ -160,4 +160,7 @@ def filter_places(
         saved_set = set(saved_ids or [])
         filtered_df = filtered_df[filtered_df["id"].isin(saved_set)]
 
+    # 2. Filter by Category
+    if category and category != "All Categories":
+        filtered_df = filtered_df[filtered_df["category"] == category]
     
