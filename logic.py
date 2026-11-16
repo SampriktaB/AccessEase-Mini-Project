@@ -176,5 +176,13 @@ def filter_places(
         if "region" in filtered_df.columns:
             search_match = search_match | filtered_df["region"].str.lower().str.contains(query, na=False)
         filtered_df = filtered_df[search_match]
+    # 4. Map user-facing labels to column names
+    selected_labels = selected_feature_labels or []
+    selected_cols = [
+        ACCESSIBILITY_FEATURES[lbl]
+        for lbl in selected_labels
+        if lbl in ACCESSIBILITY_FEATURES
+    ]
+
 
     
