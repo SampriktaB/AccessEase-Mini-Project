@@ -217,3 +217,34 @@ def filter_places(
                     filtered_df["distance_km"].notna()
                     & (filtered_df["distance_km"] <= float(max_distance_km))
                 ]
+
+            # Sorting: by distance or by match percentage
+            if sort_by == "distance":
+                filtered_df = filtered_df.sort_values(
+                    by=["distance_km", "match_percent", "name"],
+                    ascending=[True, False, True],
+                    na_position="last",
+                )
+            else:
+                filtered_df = filtered_df.sort_values(
+                    by=["match_percent", "distance_km", "name"],
+                    ascending=[False, True, True],
+                    na_position="last",
+                )
+        else:
+            filtered_df["distance_km"] = None
+            filtered_df = filtered_df.sort_values(
+                by=["match_percent", "name"], ascending=[False, True]
+            )
+    else:
+        for col in [
+            "match_percent",
+            "available_count",
+            "unavailable_count",
+            "unknown_count",
+            "total_selected",
+            "distance_km",
+        ]:
+            filtered_df[col] = []
+
+    return filtered_df
