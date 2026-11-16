@@ -176,6 +176,7 @@ def filter_places(
         if "region" in filtered_df.columns:
             search_match = search_match | filtered_df["region"].str.lower().str.contains(query, na=False)
         filtered_df = filtered_df[search_match]
+
     # 4. Map user-facing labels to column names
     selected_labels = selected_feature_labels or []
     selected_cols = [
@@ -184,5 +185,17 @@ def filter_places(
         if lbl in ACCESSIBILITY_FEATURES
     ]
 
+    # 5. Compute match score for each row
+    if not filtered_df.empty:
+        match_results = filtered_df.apply(
+            lambda row: calculate_place_match(row, selected_cols),
+            axis=1,
+            result_type="expand",
+        )
+        filtered_df["match_percent"] = match_results["match_percent"]
+        filtered_df["available_count"] = match_results["available_count"]
+        filtered_df["unavailable_count"] = match_results["unavailable_count"]
+        filtered_df["unknown_count"] = match_results["unknown_count"]
+        filtered_df["total_selected"] = match_results["total_selected"]
 
     
