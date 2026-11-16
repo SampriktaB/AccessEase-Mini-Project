@@ -248,3 +248,18 @@ def filter_places(
             filtered_df[col] = []
 
     return filtered_df
+
+
+def get_status_badge(status):
+    """Returns an accessible visual indicator for a facility status."""
+    clean_status = str(status).strip().capitalize()
+    if clean_status == "Available":
+        return "🟢 Available"
+    elif clean_status == "Unavailable":
+        return "🔴 Unavailable"
+    else:
+        return "⚪ Unknown / Unverified"
+
+
+# Alias for backward compatibility
+load_places_data = load_places_dataset
