@@ -269,3 +269,74 @@ def show_audit_details_dialog(parent_window, place, active_features):
     dialog.configure(bg=BACKGROUND_PAGE)
     dialog.transient(parent_window)
     dialog.grab_set()
+
+# Center Dialog over parent
+    try:
+        x = parent_window.winfo_x() + (parent_window.winfo_width() - 640) // 2
+        y = parent_window.winfo_y() + (parent_window.winfo_height() - 580) // 2
+        dialog.geometry(f"+{x}+{y}")
+    except Exception:
+        pass
+
+    # Header Banner
+    d_header = tk.Frame(dialog, bg=PRIMARY_DARK, padx=20, pady=16)
+    d_header.pack(fill="x")
+
+    tk.Label(
+        d_header,
+        text=f"🔍 {place['name']}",
+        font=("Segoe UI", 13, "bold"),
+        bg=PRIMARY_DARK,
+        fg="#FFFFFF",
+    ).pack(anchor="w")
+
+    tk.Label(
+        d_header,
+        text=f"{place['category']}  •  📍 {place['address']}, {place['city']}",
+        font=("Segoe UI", 9),
+        bg=PRIMARY_DARK,
+        fg="#D4C5F3",
+    ).pack(anchor="w", pady=(2, 0))
+
+    # Body Container
+    d_body = tk.Frame(dialog, bg=BACKGROUND_PAGE, padx=18, pady=14)
+    d_body.pack(fill="both", expand=True)
+
+    # Meta Info Card
+    meta_frame = tk.Frame(d_body, bg=SURFACE_CARD, highlightbackground=BORDER_CARD, highlightthickness=1, padx=12, pady=10)
+    meta_frame.pack(fill="x", pady=(0, 12))
+
+    meta_line1 = f"📞 Contact: {place['contact']}     📅 Verified Date: {place['verified_date']}"
+    dist_val = place.get("distance_km")
+    if dist_val is not None:
+        try:
+            meta_line1 += f"     📍 Proximity: {float(dist_val):.2f} km"
+        except (ValueError, TypeError):
+            pass
+
+    tk.Label(
+        meta_frame,
+        text=meta_line1,
+        font=("Segoe UI", 9, "bold"),
+        bg=SURFACE_CARD,
+        fg=TEXT_MAIN,
+    ).pack(anchor="w")
+
+    if place.get("latitude") is not None and place.get("longitude") is not None:
+        tk.Label(
+            meta_frame,
+            text=f"🌐 Geographic Coordinates: Lat {place['latitude']}, Lon {place['longitude']}",
+            font=("Segoe UI", 8),
+            bg=SURFACE_CARD,
+            fg=TEXT_MUTED,
+        ).pack(anchor="w", pady=(2, 0))
+
+    tk.Label(
+        meta_frame,
+        text=f"📝 Auditor Notes: {place['notes']}",
+        font=("Segoe UI", 9),
+        bg=SURFACE_CARD,
+        fg=TEXT_MUTED,
+        wraplength=580,
+        justify="left",
+    ).pack(anchor="w", pady=(4, 0)) 
