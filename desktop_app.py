@@ -902,3 +902,133 @@ class AccessEaseDesktopApp(tk.Tk):
             )
 
         self.refresh_venue_list()
+
+        # -------------------------------------------------------------
+    # 4. "Nearby Accessible Places" Section
+    # -------------------------------------------------------------
+    def _build_places_section(self, parent):
+        self.places_section = tk.Frame(parent, bg=BACKGROUND_PAGE, padx=20)
+        self.places_section.pack(fill="both", expand=True, pady=(6, 12))
+
+        # Section Heading Frame
+        self.heading_row = tk.Frame(self.places_section, bg=BACKGROUND_PAGE)
+        self.heading_row.pack(fill="x", pady=(0, 8))
+
+        self.lbl_places_heading = tk.Label(
+            self.heading_row,
+            text="Nearby Accessible Places",
+            font=FONT_SECTION_TITLE,
+            bg=BACKGROUND_PAGE,
+            fg=TEXT_MAIN,
+        )
+        self.lbl_places_heading.pack(side="left")
+
+        self.lbl_places_sub = tk.Label(
+            self.heading_row,
+            text="",
+            font=("Segoe UI", 9, "italic"),
+            bg=BACKGROUND_PAGE,
+            fg=TEXT_MUTED,
+        )
+        self.lbl_places_sub.pack(side="left", padx=(10, 0))
+
+        # Venue Cards Container
+        self.cards_list_frame = tk.Frame(self.places_section, bg=BACKGROUND_PAGE)
+        self.cards_list_frame.pack(fill="both", expand=True)
+
+    # -------------------------------------------------------------
+    # Navigation Controller Callbacks
+    # -------------------------------------------------------------
+    def _apply_nav_layout(self, nav_key):
+        """Unpacks dynamic sections and repacks them in clean sequential order."""
+        # Unpack all dynamic sections first
+        self.hero_container.pack_forget()
+        self.proximity_container.pack_forget()
+        self.cat_section.pack_forget()
+        self.places_section.pack_forget()
+
+        # Repack in strict top-to-bottom order based on tab
+        if nav_key == "Home":
+            self.hero_container.pack(fill="x", pady=(16, 8))
+            self.proximity_container.pack(fill="x", pady=(2, 6))
+            self.cat_section.pack(fill="x", pady=(6, 10))
+            self.places_section.pack(fill="both", expand=True, pady=(6, 12))
+            self.lbl_places_heading.config(text="Nearby Accessible Places")
+        elif nav_key == "Nearby Places":
+            self.proximity_container.pack(fill="x", pady=(14, 6))
+            self.cat_section.pack(fill="x", pady=(6, 10))
+            self.places_section.pack(fill="both", expand=True, pady=(6, 12))
+            self.lbl_places_heading.config(text="Nearby Accessible Places")
+        elif nav_key == "Favorites":
+            self.places_section.pack(fill="both", expand=True, pady=(16, 12))
+            self.lbl_places_heading.config(text="💖 Your Saved Favorites")
+        elif nav_key == "History":
+            self.places_section.pack(fill="both", expand=True, pady=(16, 12))
+            self.lbl_places_heading.config(text="🕒 Recently Inspected Venues")
+
+        self.main_content.update_idletasks()
+        self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+        self.main_canvas.yview_moveto(0)
+
+    def _on_nav_clicked(self, nav_key):
+        self.current_nav = nav_key
+
+        # Update button highlights
+        for k, btn in self.nav_buttons.items():
+            if k == nav_key:
+                btn.config(bg=SIDEBAR_ACTIVE, fg=SIDEBAR_TEXT_ACTIVE)
+            else:
+                btn.config(bg=SIDEBAR_BG, fg=SIDEBAR_TEXT)
+
+        if nav_key == "Settings":
+            self._open_filters_modal()
+            return
+
+        self._apply_nav_layout(nav_key)
+
+        if nav_key == "Home":
+            self.current_category = "All Categories"
+            self.search_var.set("")
+            self._on_category_card_clicked("All Categories")
+        elif nav_key == "Nearby Places":
+            self.current_category = "All Categories"
+            self.search_var.set("")
+            # Automatically activate 1st anchor landmark (e.g. Karve Statue Chowk) and 5 km radius if none selected
+            if not self.selected_landmark and not self.df_landmarks.empty:
+                self.combo_landmark.current(1)
+                self.combo_radius.current(2)  # Within 5 km
+                self._on_proximity_changed()
+            else:
+                self.refresh_venue_list()
+        elif nav_key == "Favorites":
+            self.refresh_venue_list()
+        elif nav_key == "History":
+            self._render_history_view()
+
+    def _toggle_bookmark(self, place_id):
+        if place_id in self.saved_places:
+            self.saved_places.remove(place_id)
+        else:
+            self.saved_places.add(place_id)
+
+        # Update Favorites Nav label
+        btn_fav = self.nav_buttons.get("Favorites")
+        if btn_fav:
+            count = len(self.saved_places)
+            label = f"  🤍 Favorites ({count})" if count > 0 else "  🤍 Favorites"
+            btn_fav.config(text=label)
+
+        if self.current_nav == "History":
+            self._render_history_view()
+        else:
+            self.refresh_venue_list()
+
+    def _open_details(self, place):
+        p_id = int(place["id"])
+        if p_id not in self.history_places:
+            self.history_places.insert(0, p_id)
+            if len(self.history_places) > 15:
+                self.history_places.pop()
+
+        active_features = [name for name, var in self.feature_vars.items() if var.get()]
+        show_audit_details_dialog(self, place, active_features)
