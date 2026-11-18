@@ -115,3 +115,21 @@ class TestAccessEaseLogic(unittest.TestCase):
         self.assertEqual(result["unavailable_count"], 0)
         self.assertEqual(result["unknown_count"], 1)
         self.assertEqual(result["match_percent"], 50)
+
+    def test_filter_by_category(self):
+        """Filtering by category should isolate matching records."""
+        filtered = filter_places(self.df, category="Hospitals")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered.iloc[0]["name"], "Alpha General Hospital")
+
+    def test_filter_by_search_query(self):
+        """Search query matches name, address, city, or notes."""
+        filtered = filter_places(self.df, search_query="braille")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered.iloc[0]["id"], 100)
+
+    def test_filter_by_saved_places(self):
+        """Only saved IDs should appear when only_saved is True."""
+        filtered = filter_places(self.df, saved_ids=[99, 101], only_saved=True)
+        self.assertEqual(len(filtered), 2)
+        self.assertSetEqual(set(filtered["id"]), {99, 101})
