@@ -103,3 +103,15 @@ class TestAccessEaseLogic(unittest.TestCase):
         self.assertEqual(result["unavailable_count"], 1)
         self.assertEqual(result["unknown_count"], 1)
         self.assertEqual(result["match_percent"], 50)
+
+    def test_missing_data_not_treated_as_unavailable(self):
+        """Unknown or missing data must be classified as 'Unknown', not 'Unavailable'."""
+        place_with_missing = {
+            "wheelchair_ramps": "Available",
+            "lifts": "",  # missing / blank
+        }
+        result = calculate_place_match(place_with_missing, ["wheelchair_ramps", "lifts"])
+        self.assertEqual(result["available_count"], 1)
+        self.assertEqual(result["unavailable_count"], 0)
+        self.assertEqual(result["unknown_count"], 1)
+        self.assertEqual(result["match_percent"], 50)
