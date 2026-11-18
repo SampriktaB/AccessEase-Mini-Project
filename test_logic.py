@@ -167,3 +167,33 @@ class TestAccessEaseLogic(unittest.TestCase):
         """Invalid or missing coordinates return None without raising exceptions."""
         self.assertIsNone(haversine_distance(None, 73.8166, 18.5180, 73.8150))
         self.assertIsNone(haversine_distance("invalid", "coords", 18.5180, 73.8150))
+
+    def test_load_landmarks_csv(self):
+        """Check reading landmarks.csv loads 20 reference starting points."""
+        df_lm = load_landmarks_dataset()
+        self.assertEqual(len(df_lm), 20, "landmarks.csv must contain exactly 20 reference landmarks")
+        for col in ["id", "name", "landmark_area", "latitude", "longitude"]:
+            self.assertIn(col, df_lm.columns)
+            self.assertFalse(df_lm[col].isna().any(), f"Landmark column {col} has missing values")
+
+    def test_filter_places_with_proximity_and_radius(self):
+        """Check proximity calculation and radius filtering in filter_places."""
+        df_places = load_places_data()
+        # Filter within 2 km of Karve Statue Chowk (18.5018, 73.8166)
+        filtered_2km = filter_places(
+            df=df_places,
+            landmark_lat=18.5018,
+            landmark_lon=73.8166,
+            max_distance_km=2.0,
+            sort_by="distance",
+        )
+        self.assertFalse(filtered_2km.empty)
+        # All returned places must have distance <= 2.0 km
+        self.assertTrue((filtered_2km["distance_km"] <= 2.0).all())
+        # Results must be sorted nearest first
+        distances = list(filtered_2km["distance_km"])
+        self.assertEqual(distances, sorted(distances))
+
+
+if __name__ == "__main__":
+    unittest.main()
