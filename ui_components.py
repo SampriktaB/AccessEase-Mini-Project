@@ -340,3 +340,53 @@ def show_audit_details_dialog(parent_window, place, active_features):
         wraplength=580,
         justify="left",
     ).pack(anchor="w", pady=(4, 0)) 
+
+    # Facility Breakdown Table
+    tk.Label(
+        d_body,
+        text="✨ Comprehensive 8-Facility Accessibility Audit:",
+        font=("Segoe UI", 10, "bold"),
+        bg=BACKGROUND_PAGE,
+        fg=PRIMARY_DARK,
+    ).pack(anchor="w", pady=(0, 6))
+
+    table_frame = tk.Frame(d_body, bg=SURFACE_CARD, highlightbackground=BORDER_CARD, highlightthickness=1)
+    table_frame.pack(fill="both", expand=True)
+
+    # Table Header
+    h_frame = tk.Frame(table_frame, bg="#EDE7FB", padx=10, pady=6)
+    h_frame.pack(fill="x")
+    tk.Label(h_frame, text="Facility Name", font=("Segoe UI", 9, "bold"), bg="#EDE7FB", fg=TEXT_MAIN, width=25, anchor="w").pack(side="left")
+    tk.Label(h_frame, text="Audited Status", font=("Segoe UI", 9, "bold"), bg="#EDE7FB", fg=TEXT_MAIN, width=22, anchor="w").pack(side="left")
+    tk.Label(h_frame, text="Your Checklist", font=("Segoe UI", 9, "bold"), bg="#EDE7FB", fg=TEXT_MAIN, width=15, anchor="w").pack(side="left")
+
+    # Table Rows
+    for idx, (feat_name, col_name) in enumerate(ACCESSIBILITY_FEATURES.items()):
+        row_bg = "#FFFFFF" if idx % 2 == 0 else "#F7F3FD"
+        r_frame = tk.Frame(table_frame, bg=row_bg, padx=10, pady=4)
+        r_frame.pack(fill="x")
+
+        status_val = str(place.get(col_name, "Unknown")).capitalize()
+        badge_str = get_status_badge(status_val)
+        in_check = "✅ Required" if feat_name in active_features else "—"
+
+        tk.Label(r_frame, text=feat_name, font=("Segoe UI", 9), bg=row_bg, fg=TEXT_MAIN, width=25, anchor="w").pack(side="left")
+        tk.Label(r_frame, text=badge_str, font=("Segoe UI", 9, "bold"), bg=row_bg, width=22, anchor="w").pack(side="left")
+        tk.Label(r_frame, text=in_check, font=("Segoe UI", 9), bg=row_bg, fg=TEXT_MUTED, width=15, anchor="w").pack(side="left")
+
+    # Close Button
+    btn_close = tk.Button(
+        dialog,
+        text="Close Window",
+        command=dialog.destroy,
+        font=FONT_BUTTON,
+        bg=PRIMARY_COLOR,
+        fg="#FFFFFF",
+        activebackground=PRIMARY_HOVER,
+        relief="flat",
+        padx=18,
+        pady=6,
+        cursor="hand2",
+    )
+    btn_close.pack(pady=12)
+    
