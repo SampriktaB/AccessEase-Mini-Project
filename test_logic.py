@@ -149,3 +149,21 @@ class TestAccessEaseLogic(unittest.TestCase):
             self.assertIn(col, df.columns)
             # Ensure no NaNs exist in accessibility columns
             self.assertFalse(df[col].isna().any(), f"Column {col} has NaN values")
+
+    def test_haversine_distance_accuracy(self):
+        """Check great-circle distance calculation using Haversine formula."""
+        # Karve Statue Chowk: 18.5018, 73.8166
+        # MIT-WPU Kothrud: 18.5180, 73.8150
+        dist = haversine_distance(18.5018, 73.8166, 18.5180, 73.8150)
+        self.assertIsNotNone(dist)
+        self.assertAlmostEqual(dist, 1.81, places=1)
+
+    def test_haversine_distance_same_point(self):
+        """Distance between identical coordinates must be exactly 0.0 km."""
+        dist = haversine_distance(18.5018, 73.8166, 18.5018, 73.8166)
+        self.assertEqual(dist, 0.0)
+
+    def test_haversine_distance_invalid_coordinates(self):
+        """Invalid or missing coordinates return None without raising exceptions."""
+        self.assertIsNone(haversine_distance(None, 73.8166, 18.5180, 73.8150))
+        self.assertIsNone(haversine_distance("invalid", "coords", 18.5180, 73.8150))
