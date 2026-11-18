@@ -1032,3 +1032,85 @@ class AccessEaseDesktopApp(tk.Tk):
 
         active_features = [name for name, var in self.feature_vars.items() if var.get()]
         show_audit_details_dialog(self, place, active_features)
+
+        # -------------------------------------------------------------
+    # Filter & Persona Modal
+    # -------------------------------------------------------------
+    def _open_filters_modal(self):
+        modal = tk.Toplevel(self)
+        modal.title("Accessibility Profile & Criteria Filters")
+        modal.geometry("540x520")
+        modal.configure(bg=BACKGROUND_PAGE)
+        modal.transient(self)
+        modal.grab_set()
+
+        # Header
+        h_frame = tk.Frame(modal, bg=PRIMARY_DARK, padx=18, pady=14)
+        h_frame.pack(fill="x")
+        tk.Label(h_frame, text="⚙ Filter By Accessibility Needs", font=("Segoe UI", 12, "bold"), bg=PRIMARY_DARK, fg="#FFFFFF").pack(anchor="w")
+        tk.Label(h_frame, text="Choose a profile preset or check specific criteria below:", font=("Segoe UI", 9), bg=PRIMARY_DARK, fg="#D4C5F3").pack(anchor="w", pady=(2, 0))
+
+        body = tk.Frame(modal, bg=BACKGROUND_PAGE, padx=18, pady=12)
+        body.pack(fill="both", expand=True)
+
+        # Profile Preset Buttons
+        tk.Label(body, text="Quick Profile Presets:", font=("Segoe UI", 10, "bold"), bg=BACKGROUND_PAGE, fg=TEXT_MAIN).pack(anchor="w", pady=(0, 6))
+
+        preset_row = tk.Frame(body, bg=BACKGROUND_PAGE)
+        preset_row.pack(fill="x", pady=(0, 12))
+
+        for p_name in PROFILES.keys():
+            is_active = (p_name == self.active_profile)
+            tk.Button(
+                preset_row,
+                text=p_name,
+                font=("Segoe UI", 8, "bold"),
+                bg=PRIMARY_COLOR if is_active else "#FFFFFF",
+                fg="#FFFFFF" if is_active else PRIMARY_DARK,
+                relief="flat",
+                padx=8,
+                pady=4,
+                cursor="hand2",
+                command=lambda pn=p_name, m=modal: [self._apply_profile_preset(pn), m.destroy(), self.refresh_venue_list()],
+            ).pack(side="left", padx=(0, 6))
+
+        # 8 Checklist Checkboxes
+        tk.Label(body, text="Detailed Facility Criteria:", font=("Segoe UI", 10, "bold"), bg=BACKGROUND_PAGE, fg=TEXT_MAIN).pack(anchor="w", pady=(4, 6))
+
+        cb_frame = tk.Frame(body, bg=SURFACE_CARD, highlightbackground=BORDER_CARD, highlightthickness=1, padx=14, pady=10)
+        cb_frame.pack(fill="both", expand=True)
+
+        for feat_label, var in self.feature_vars.items():
+            tk.Checkbutton(
+                cb_frame,
+                text=f"  {feat_label}",
+                variable=var,
+                font=("Segoe UI", 9),
+                bg=SURFACE_CARD,
+                activebackground=SURFACE_CARD,
+                selectcolor="#EDE7FB",
+                cursor="hand2",
+            ).pack(anchor="w", pady=2)
+
+        # Apply / Close
+        btn_box = tk.Frame(modal, bg=BACKGROUND_PAGE, pady=10)
+        btn_box.pack(fill="x")
+        tk.Button(
+            btn_box,
+            text="Apply Filters",
+            font=FONT_BUTTON,
+            bg=PRIMARY_COLOR,
+            fg="#FFFFFF",
+            relief="flat",
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            command=lambda: [modal.destroy(), self.refresh_venue_list()],
+        ).pack(side="right", padx=18)
+
+    def _apply_profile_preset(self, profile_name):
+        self.active_profile = profile_name
+        preset = PROFILES.get(profile_name, [])
+        if profile_name != "Custom / Manual":
+            for feat_name, var in self.feature_vars.items():
+                var.set(feat_name in preset)
