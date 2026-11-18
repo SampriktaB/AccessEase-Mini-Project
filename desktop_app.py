@@ -1114,3 +1114,127 @@ class AccessEaseDesktopApp(tk.Tk):
         if profile_name != "Custom / Manual":
             for feat_name, var in self.feature_vars.items():
                 var.set(feat_name in preset)
+
+    # -------------------------------------------------------------
+    # Refresh Venue List
+    # -------------------------------------------------------------
+    def refresh_venue_list(self):
+        # Clear existing card widgets
+        for widget in self.cards_list_frame.winfo_children():
+            widget.destroy()
+
+        active_features = [name for name, var in self.feature_vars.items() if var.get()]
+        search_query = self.search_var.get()
+        only_saved = (self.current_nav == "Favorites")
+
+        landmark_lat = self.selected_landmark["latitude"] if self.selected_landmark else None
+        landmark_lon = self.selected_landmark["longitude"] if self.selected_landmark else None
+
+        filtered_df = filter_places(
+            df=self.df_places,
+            category=self.current_category,
+            search_query=search_query,
+            selected_feature_labels=active_features,
+            saved_ids=list(self.saved_places),
+            only_saved=only_saved,
+            landmark_lat=landmark_lat,
+            landmark_lon=landmark_lon,
+            max_distance_km=self.selected_radius_km,
+            sort_by=self.sort_mode,
+        )
+
+        # Update subtext in heading row
+        if hasattr(self, "lbl_places_sub"):
+            if self.selected_landmark:
+                rad_info = f" • Within {int(self.selected_radius_km)} km" if self.selected_radius_km else ""
+                self.lbl_places_sub.config(
+                    text=f"(Anchor: {self.selected_landmark['name']}{rad_info} • {len(filtered_df)} venues)"
+                )
+            else:
+                self.lbl_places_sub.config(text=f"({len(filtered_df)} venues)")
+
+        if filtered_df.empty:
+            empty_box = tk.Frame(self.cards_list_frame, bg=BACKGROUND_PAGE, pady=40)
+            empty_box.pack(fill="both", expand=True)
+
+            msg = "🔍 No venues match your current filters or search keywords.\nTry clicking 'View All →' or clearing search / proximity filters."
+            if only_saved:
+                msg = "💖 You haven't added any favorite venues yet.\nClick the heart icon on any venue to save it here!"
+
+            tk.Label(
+                empty_box,
+                text=msg,
+                font=("Segoe UI", 11),
+                bg=BACKGROUND_PAGE,
+                fg=TEXT_MUTED,
+                justify="center",
+            ).pack()
+            self.main_content.update_idletasks()
+            self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+            return
+
+        for _, place in filtered_df.iterrows():
+            p_id = int(place["id"])
+            render_venue_card(
+                parent_frame=self.cards_list_frame,
+                place=place,
+                selected_features=active_features,
+                is_saved=(p_id in self.saved_places),
+                on_toggle_bookmark=self._toggle_bookmark,
+                on_open_details=self._open_details,
+            )
+
+        self.main_content.update_idletasks()
+        self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+
+    def _render_history_view(self):
+        for widget in self.cards_list_frame.winfo_children():
+            widget.destroy()
+
+        if hasattr(self, "lbl_places_sub"):
+            self.lbl_places_sub.config(text=f"({len(self.history_places)} recently inspected venues)")
+
+        if not self.history_places:
+            tk.Label(
+                self.cards_list_frame,
+                text="🕒 No venues inspected yet in this session.\nClick '❯' on any venue card to review its audit history!",
+                font=("Segoe UI", 11),
+                bg=BACKGROUND_PAGE,
+                fg=TEXT_MUTED,
+                pady=60,
+            ).pack()
+            self.main_content.update_idletasks()
+            self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+            return
+
+        hist_df = self.df_places[self.df_places["id"].isin(self.history_places)]
+        active_features = [name for name, var in self.feature_vars.items() if var.get()]
+
+        landmark_lat = self.selected_landmark["latitude"] if self.selected_landmark else None
+        landmark_lon = self.selected_landmark["longitude"] if self.selected_landmark else None
+
+        hist_df = filter_places(
+            df=hist_df,
+            selected_feature_labels=active_features,
+            landmark_lat=landmark_lat,
+            landmark_lon=landmark_lon,
+        )
+
+        for _, place in hist_df.iterrows():
+            p_id = int(place["id"])
+            render_venue_card(
+                parent_frame=self.cards_list_frame,
+                place=place,
+                selected_features=active_features,
+                is_saved=(p_id in self.saved_places),
+                on_toggle_bookmark=self._toggle_bookmark,
+                on_open_details=self._open_details,
+            )
+
+        self.main_content.update_idletasks()
+        self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+
+
+if __name__ == "__main__":
+    app = AccessEaseDesktopApp()
+    app.mainloop()
