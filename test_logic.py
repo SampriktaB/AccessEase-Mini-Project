@@ -133,3 +133,19 @@ class TestAccessEaseLogic(unittest.TestCase):
         filtered = filter_places(self.df, saved_ids=[99, 101], only_saved=True)
         self.assertEqual(len(filtered), 2)
         self.assertSetEqual(set(filtered["id"]), {99, 101})
+
+    def test_status_badge(self):
+        """Check badge formatting for accessibility."""
+        self.assertIn("Available", get_status_badge("Available"))
+        self.assertIn("Unavailable", get_status_badge("Unavailable"))
+        self.assertIn("Unknown", get_status_badge("Unknown"))
+        self.assertIn("Unknown", get_status_badge(""))
+
+    def test_load_places_csv(self):
+        """Check reading places.csv loads valid records with required columns."""
+        df = load_places_data()
+        self.assertFalse(df.empty, "places.csv should not be empty")
+        for col in ACCESSIBILITY_FEATURES.values():
+            self.assertIn(col, df.columns)
+            # Ensure no NaNs exist in accessibility columns
+            self.assertFalse(df[col].isna().any(), f"Column {col} has NaN values")
