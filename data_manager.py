@@ -135,3 +135,19 @@ def load_places_dataset(csv_path=None):
 
     return df
 
+def add_place_to_csv(place_data_dict, csv_path=None):
+    """
+    Utility function allowing team members to add new real places
+    (e.g., real hospitals, colleges, transit hubs) to the CSV programmatically.
+    """
+    if csv_path is None:
+        csv_path = DEFAULT_LOCATIONS_PATH if os.path.exists(DEFAULT_LOCATIONS_PATH) else DEFAULT_PLACES_PATH
+
+    df = load_places_dataset(csv_path)
+    next_id = int(df["id"].max() + 1) if not df.empty and "id" in df.columns else 1
+    place_data_dict["id"] = next_id
+
+    new_df = pd.concat([df, pd.DataFrame([place_data_dict])], ignore_index=True)
+    new_df.to_csv(csv_path, index=False)
+    return next_id
+
