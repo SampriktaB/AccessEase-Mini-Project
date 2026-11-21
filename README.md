@@ -1,2 +1,1 @@
-# AccessEase : Accessibility Assistant
-
+AccessEase : Accessibility Assistant
